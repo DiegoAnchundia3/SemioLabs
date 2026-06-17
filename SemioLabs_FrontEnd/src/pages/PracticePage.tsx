@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import ActionButton from '../components/ActionButton';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -84,6 +84,9 @@ function PracticePage() {
   const [saved, setSaved] = useState(false);
   const [vfMatches, setVFMatches] = useState<{ [leftIdx: number]: number }>({});
   const [dragMatches, setDragMatches] = useState<{ [key: string]: string }>({});
+  const [selectedDragItemId, setSelectedDragItemId] = useState<string | null>(null);
+  const [viewportWidth, setViewportWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [matchedPairs, setMatchedPairs] = useState<number[]>([]);
   const [selectedLeftIndex, setSelectedLeftIndex] = useState<number | null>(null);
   const [crosswordAnswers, setCrosswordAnswers] = useState<Record<string, string>>({});
@@ -98,6 +101,33 @@ function PracticePage() {
   const questionStartRef = useRef<number>(0);
   const crosswordPuzzle = crosswordPuzzles[selectedCrosswordIndex] || crosswordPuzzles[0];
   const selectedHangmanQuestion = hangmanQuestions[selectedHangmanIndex] || hangmanQuestions[0];
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const mediaQuery = window.matchMedia('(pointer: coarse), (hover: none)');
+    const syncViewport = () => setViewportWidth(window.innerWidth);
+    const syncTouchMode = () => setIsTouchDevice(mediaQuery.matches);
+
+    syncViewport();
+    syncTouchMode();
+
+    window.addEventListener('resize', syncViewport);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', syncTouchMode);
+      return () => {
+        window.removeEventListener('resize', syncViewport);
+        mediaQuery.removeEventListener('change', syncTouchMode);
+      };
+    }
+
+    mediaQuery.addListener(syncTouchMode);
+    return () => {
+      window.removeEventListener('resize', syncViewport);
+      mediaQuery.removeListener(syncTouchMode);
+    };
+  }, []);
 
   const questions = useMemo(() => {
     if (selectedMode === 'diagnostico-express') {
@@ -150,6 +180,9 @@ function PracticePage() {
     (selectedMode === 'carrusel' && (currentQuestion as any).type === 'hangman');
   const currentHangmanQuestion = isHangman ? currentQuestion as HangmanQuestion & { type?: string } : null;
   const normalizedHangmanAnswer = currentHangmanQuestion ? normalizeGuessValue(currentHangmanQuestion.answer) : '';
+  const crosswordCellSize = viewportWidth > 768
+    ? 36
+    : Math.max(24, Math.min(36, Math.floor((Math.max(viewportWidth, 320) - 84) / crosswordPuzzle.cols)));
   const hangmanWrongGuesses = hangmanGuesses.filter((letter) => !normalizedHangmanAnswer.includes(letter));
   const hangmanCorrectGuesses = hangmanGuesses.filter((letter) => normalizedHangmanAnswer.includes(letter));
   const hangmanIsComplete = !!currentHangmanQuestion && [...normalizedHangmanAnswer].every((letter) => {
@@ -193,6 +226,7 @@ function PracticePage() {
     setMatchedPairs([]);
     setVFMatches({});
     setDragMatches({});
+    setSelectedDragItemId(null);
     setCrosswordAnswers({});
     setSelectedClueId(null);
     setFocusedCellKey(null);
@@ -438,6 +472,16 @@ function PracticePage() {
     return { correctCount, incorrectCount };
   };
 
+  const assignDragItemToTarget = (itemId: string, targetId: string) => {
+    if (locked) return;
+
+    setDragMatches((prev) => ({
+      ...prev,
+      [itemId]: targetId,
+    }));
+    setSelectedDragItemId(null);
+  };
+
   const goNext = () => {
     const totalQuestions = getTotalQuestions();
     if (questionIndex === totalQuestions - 1) {
@@ -466,6 +510,7 @@ function PracticePage() {
     setLocked(false);
     setVFMatches({});
     setDragMatches({});
+    setSelectedDragItemId(null);
     setCrosswordAnswers({});
     setSelectedClueId(null);
     setFocusedCellKey(null);
@@ -833,13 +878,21 @@ function PracticePage() {
               <>
                 <div className="drag-drop-container">
                   <div className="drag-items">
+                    <p className="drag-drop-hint">Toca un sintoma y luego toca el sindrome para asignarlo.</p>
                     <h4>Síntomas</h4>
                     {(currentQuestion as DragDropQuestion).items.map((item) => (
                       <div
                         key={item.id}
-                        className="drag-item"
-                        draggable
+                        className={`drag-item ${selectedDragItemId === item.id ? 'selected' : ''}`}
+                        draggable={!locked && !isTouchDevice}
+                        aria-pressed={selectedDragItemId === item.id}
+                        onClick={() => {
+                          if (locked) return;
+                          setSelectedDragItemId((prev) => (prev === item.id ? null : item.id));
+                        }}
                         onDragStart={(e) => {
+                          if (locked || isTouchDevice) return;
+                          setSelectedDragItemId(item.id);
                           e.dataTransfer?.setData('itemId', item.id);
                           e.dataTransfer!.effectAllowed = 'copy';
                         }}
@@ -855,6 +908,10 @@ function PracticePage() {
                       <div
                         key={target.id}
                         className="drop-target"
+                        onClick={() => {
+                          if (!selectedDragItemId) return;
+                          assignDragItemToTarget(selectedDragItemId, target.id);
+                        }}
                         onDragOver={(e) => {
                           e.preventDefault();
                           e.dataTransfer!.dropEffect = 'copy';
@@ -863,10 +920,7 @@ function PracticePage() {
                           e.preventDefault();
                           const itemId = e.dataTransfer?.getData('itemId');
                           if (itemId) {
-                            setDragMatches((prev) => ({
-                              ...prev,
-                              [itemId]: target.id,
-                            }));
+                            assignDragItemToTarget(itemId, target.id);
                           }
                         }}
                       >
@@ -889,6 +943,7 @@ function PracticePage() {
                                         delete newMatches[item.id];
                                         return newMatches;
                                       });
+                                      setSelectedDragItemId((prev) => (prev === item.id ? null : prev));
                                     }}
                                   >
                                     ✕
@@ -993,9 +1048,10 @@ function PracticePage() {
                     <div
                       className="crossword-board"
                       style={{
-                        gridTemplateColumns: `repeat(${crosswordPuzzle.cols}, 36px)`,
-                        width: `${crosswordPuzzle.cols * 36}px`,
-                      }}
+                        ['--crossword-cell-size' as '--crossword-cell-size']: `${crosswordCellSize}px`,
+                        gridTemplateColumns: `repeat(${crosswordPuzzle.cols}, ${crosswordCellSize}px)`,
+                        width: `${crosswordPuzzle.cols * crosswordCellSize}px`,
+                      } as CSSProperties}
                     >
                       {crosswordPuzzle.cells.reduce((acc: any[], rowCells: any[], rowIndex: number) => {
                         const mapped = rowCells.map((cell: any, colIndex: number) => {

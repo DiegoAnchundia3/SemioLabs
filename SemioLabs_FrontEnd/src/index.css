@@ -20,6 +20,7 @@ body,
 #root {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 body {
@@ -31,12 +32,14 @@ body {
 #root {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 button {
   border: 0;
   cursor: pointer;
   font: inherit;
+  touch-action: manipulation;
 }
 
 .theme-toggle-button {
@@ -984,10 +987,10 @@ h2 {
 
 .crossword-cell {
   position: relative;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: var(--crossword-cell-size, 36px);
+  height: var(--crossword-cell-size, 36px);
+  min-width: var(--crossword-cell-size, 36px);
+  min-height: var(--crossword-cell-size, 36px);
   border-radius: 6px;
   background: rgba(30, 41, 59, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.16);
@@ -1547,6 +1550,10 @@ body[data-theme='light'] .target-label {
   color: #0f172a !important;
 }
 
+body[data-theme='light'] .drag-drop-hint {
+  color: #475569;
+}
+
 body[data-theme='light'] .primary-btn,
 body[data-theme='light'] .secondary-btn {
   background: linear-gradient(135deg, #2563eb, #0ea5e9);
@@ -1899,13 +1906,27 @@ body[data-theme='light'] .practice-brand-badge {
   color: #dbe2f3;
   cursor: move;
   user-select: none;
+  touch-action: manipulation;
   transition: all 200ms ease;
+}
+
+.drag-item.selected {
+  border-color: rgba(56, 189, 248, 0.95);
+  background: rgba(14, 165, 233, 0.2);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.24);
 }
 
 .drag-item:hover {
   border-color: rgba(129, 140, 248, 0.8);
   background: rgba(30, 41, 59, 0.9);
   box-shadow: 0 4px 12px rgba(129, 140, 248, 0.2);
+}
+
+.drag-drop-hint {
+  margin: 0 0 10px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  line-height: 1.4;
 }
 
 .drop-targets {
@@ -2165,5 +2186,117 @@ body[data-theme='dark'] .matching-target.wrong {
 @media (max-width: 520px) {
   .game-modes-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    gap: 14px;
+    padding: 82px 12px 28px;
+    align-items: stretch;
+  }
+
+  .theme-toggle-button {
+    top: 12px;
+    left: 12px;
+  }
+
+  .about-trigger {
+    top: 12px;
+    right: 12px;
+  }
+
+  .hero-single,
+  .mini-card.practice-game-card {
+    padding: 20px !important;
+  }
+
+  .stack-col,
+  .mini-card,
+  .mini-card.practice-game-card,
+  .mini-card.crossword-wrapper,
+  .mini-card.hangman-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .practice-brand-badge {
+    max-width: calc(100vw - 132px);
+  }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .stat-pill {
+    text-align: center;
+  }
+
+  .matching-container,
+  .drag-drop-container {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  .matching-column,
+  .drag-items,
+  .drop-targets,
+  .target-items {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .matching-item,
+  .matching-target,
+  .drag-item,
+  .drop-target,
+  .dropped-item {
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .matching-lines {
+    display: none;
+  }
+
+  .hangman-container {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .hangman-visual-panel,
+  .hangman-play-panel,
+  .crossword-board-and-clues,
+  .crossword-board,
+  .crossword-clues,
+  .options-grid,
+  .stats-bar,
+  .practice-action-row,
+  .practice-next-action {
+    min-width: 0;
+  }
+
+  .hangman-input-row {
+    flex-wrap: wrap;
+  }
+
+  .hangman-input-row input {
+    flex: 0 0 64px;
+  }
+
+  .crossword-board {
+    padding: 10px;
+  }
+
+  .crossword-clues .list {
+    padding-left: 16px;
   }
 }
