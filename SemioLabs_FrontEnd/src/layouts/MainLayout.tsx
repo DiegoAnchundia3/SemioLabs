@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 type ThemeMode = 'dark' | 'light';
 
 function MainLayout({ children }: PropsWithChildren) {
-  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
+  const [themeMode, setThemeMode] = useState<ThemeMode>('light');
 
   useEffect(() => {
     const storedTheme = window.localStorage.getItem('semiolabs.theme');
-    setThemeMode(storedTheme === 'light' ? 'light' : 'dark');
+    setThemeMode(storedTheme === 'dark' ? 'dark' : 'light');
   }, []);
 
   useEffect(() => {
