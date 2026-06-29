@@ -791,8 +791,10 @@ h2 {
 
 .crossword-board {
   display: grid;
-  gap: 4px;
-  padding: 18px;
+  gap: var(--crossword-gap, 4px);
+  padding: var(--crossword-board-padding, 12px);
+  box-sizing: border-box;
+  max-width: 100%;
   border-radius: 18px;
   background: rgba(15, 23, 42, 0.72);
   border: 1px solid rgba(129, 140, 248, 0.25);
@@ -920,7 +922,7 @@ body[data-theme='dark'] .crossword-cell.wrong {
 }
 
 .crossword-board {
-  padding: 12px;
+  padding: var(--crossword-board-padding, 12px);
   overflow: visible;
   background-clip: padding-box;
 }
@@ -2107,7 +2109,17 @@ body[data-theme='dark'] .matching-target.wrong {
   }
 
   .crossword-board {
-    padding: 10px;
+    padding: var(--crossword-board-padding, 8px);
+  }
+
+  .crossword-cell input {
+    font-size: clamp(0.7rem, 3vw, 1rem);
+  }
+
+  .cell-number {
+    top: 2px;
+    left: 3px;
+    font-size: 0.55rem;
   }
 
   .crossword-clues .list {

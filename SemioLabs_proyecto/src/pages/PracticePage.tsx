@@ -180,9 +180,28 @@ function PracticePage() {
     (selectedMode === 'carrusel' && (currentQuestion as any).type === 'hangman');
   const currentHangmanQuestion = isHangman ? currentQuestion as HangmanQuestion & { type?: string } : null;
   const normalizedHangmanAnswer = currentHangmanQuestion ? normalizeGuessValue(currentHangmanQuestion.answer) : '';
-  const crosswordCellSize = viewportWidth > 768
-    ? 36
-    : Math.max(24, Math.min(36, Math.floor((Math.max(viewportWidth, 320) - 84) / crosswordPuzzle.cols)));
+  const isCompactCrossword = viewportWidth <= 768;
+  const crosswordGap = isCompactCrossword ? 2 : 4;
+  const crosswordBoardPadding = isCompactCrossword ? 8 : 12;
+  const crosswordAvailableWidth = isCompactCrossword
+    ? Math.max(240, viewportWidth - 96)
+    : Number.POSITIVE_INFINITY;
+  const crosswordCellSize = isCompactCrossword
+    ? Math.max(
+        13,
+        Math.min(
+          36,
+          Math.floor(
+            (crosswordAvailableWidth - crosswordBoardPadding * 2 - (crosswordPuzzle.cols - 1) * crosswordGap) /
+              crosswordPuzzle.cols,
+          ),
+        ),
+      )
+    : 36;
+  const crosswordBoardWidth =
+    crosswordPuzzle.cols * crosswordCellSize +
+    (crosswordPuzzle.cols - 1) * crosswordGap +
+    crosswordBoardPadding * 2;
   const hangmanWrongGuesses = hangmanGuesses.filter((letter) => !normalizedHangmanAnswer.includes(letter));
   const hangmanCorrectGuesses = hangmanGuesses.filter((letter) => normalizedHangmanAnswer.includes(letter));
   const hangmanIsComplete = !!currentHangmanQuestion && [...normalizedHangmanAnswer].every((letter) => {
@@ -1049,8 +1068,10 @@ function PracticePage() {
                       className="crossword-board"
                       style={{
                         ['--crossword-cell-size' as '--crossword-cell-size']: `${crosswordCellSize}px`,
+                        ['--crossword-gap' as '--crossword-gap']: `${crosswordGap}px`,
+                        ['--crossword-board-padding' as '--crossword-board-padding']: `${crosswordBoardPadding}px`,
                         gridTemplateColumns: `repeat(${crosswordPuzzle.cols}, ${crosswordCellSize}px)`,
-                        width: `${crosswordPuzzle.cols * crosswordCellSize}px`,
+                        width: `${crosswordBoardWidth}px`,
                       } as CSSProperties}
                     >
                       {crosswordPuzzle.cells.reduce((acc: any[], rowCells: any[], rowIndex: number) => {
